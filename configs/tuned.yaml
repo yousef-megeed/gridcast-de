@@ -1,0 +1,16 @@
+gbm:
+  bagging_fraction: 0.6734471326136074
+  feature_fraction: 0.6327129803915874
+  lambda_l2: 0.10156139658829205
+  learning_rate: 0.02217856159534255
+  min_data_in_leaf: 20
+  num_leaves: 106
+nn:
+  context_hours: 168
+  d_model: 96
+  dropout: 0.054752226643122806
+  lr: 0.002963031943661732
+  n_layers: 1
+  patch_hours: 6
+  weight_decay: 4.778296514237885e-05
+ridge_alpha: 1000.0

@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: requirements-dev.lock
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned dependencies (CPU-only torch)
+        run: |
+          uv venv --python 3.12
+          uv pip install -r requirements-dev.lock \
+            --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match
+          uv pip install --no-deps -e .
+      - name: Format and lint
+        run: |
+          .venv/bin/ruff format --check src tests
+          .venv/bin/ruff check src tests
+      - name: Type check
+        run: .venv/bin/mypy
+      - name: Unit and API tests
+        run: |
+          .venv/bin/python -m pytest --ignore=tests/test_gbm.py -m "not network" \
+            --cov=gridcast --cov-report=term
+          .venv/bin/python -m pytest tests/test_gbm.py --cov=gridcast --cov-append \
+            --cov-report=term --cov-report=xml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.xml
+
+  image:
+    runs-on: ubuntu-latest
+    needs: quality
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the serving image
+        run: docker build -t gridcast-de:ci .
+      - name: Smoke test the real model through the API
+        run: |
+          docker run -d --name api -p 8000:8000 gridcast-de:ci
+          for attempt in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:8000/health && break
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:8000/health
+          curl -fsS http://127.0.0.1:8000/v1/forecast/demo | python3 -c \
+            "import json, sys; body = json.load(sys.stdin); assert len(body['points']) == 24"
+          docker logs api | tail -5

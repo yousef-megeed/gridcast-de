@@ -1,0 +1,21 @@
+services:
+  api:
+    build: .
+    image: gridcast-de:latest
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  # Experiment browser: `docker compose --profile tracking up`, then open http://localhost:5000.
+  mlflow:
+    profiles: ["tracking"]
+    image: ghcr.io/mlflow/mlflow:v3.18.0
+    command: >
+      mlflow server --host 0.0.0.0 --port 5000
+      --backend-store-uri sqlite:////mlflow/mlflow.db
+      --default-artifact-root /mlflow/mlruns
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlflow.db:/mlflow/mlflow.db
+      - ./mlruns:/mlflow/mlruns

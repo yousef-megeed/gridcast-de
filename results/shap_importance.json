@@ -1,0 +1,50 @@
+[
+  {
+    "feature": "same_hour_4w_mean",
+    "mean_abs_shap_pct": 5.95270259446664
+  },
+  {
+    "feature": "lag_168",
+    "mean_abs_shap_pct": 2.920887701790317
+  },
+  {
+    "feature": "hour",
+    "mean_abs_shap_pct": 1.0889197389291683
+  },
+  {
+    "feature": "doy",
+    "mean_abs_shap_pct": 0.9499065299665892
+  },
+  {
+    "feature": "lag_336",
+    "mean_abs_shap_pct": 0.8767320811738475
+  },
+  {
+    "feature": "lag_504",
+    "mean_abs_shap_pct": 0.8700195957505586
+  },
+  {
+    "feature": "dow",
+    "mean_abs_shap_pct": 0.8456329531809033
+  },
+  {
+    "feature": "wind",
+    "mean_abs_shap_pct": 0.8040577297694788
+  },
+  {
+    "feature": "holiday_share",
+    "mean_abs_shap_pct": 0.5966315478780232
+  },
+  {
+    "feature": "level_gw",
+    "mean_abs_shap_pct": 0.5927306220865183
+  },
+  {
+    "feature": "rad",
+    "mean_abs_shap_pct": 0.48930751766677516
+  },
+  {
+    "feature": "lag_48",
+    "mean_abs_shap_pct": 0.45690630134875
+  }
+]

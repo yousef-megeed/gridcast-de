@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GridCast DE</title>
+<style>
+  .viz-root {
+    color-scheme: light;
+    --surface-0: #f3f2ee; --surface-1: #fcfcfb; --line: #e4e3df;
+    --text-primary: #0b0b0b; --text-secondary: #52514e; --text-muted: #6e6d68;
+    --series-1: #2a78d6; --series-2: #eb6834; --actual: #0b0b0b;
+    --critical: #b3261e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz-root {
+      color-scheme: dark;
+      --surface-0: #111110; --surface-1: #1a1a19; --line: #30302e;
+      --text-primary: #f0efec; --text-secondary: #c3c2b7; --text-muted: #9a9991;
+      --series-1: #3987e5; --series-2: #d95926; --actual: #f0efec;
+      --critical: #f2736b;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  .viz-root {
+    min-height: 100%; background: var(--surface-0); color: var(--text-primary);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: 28px 20px 48px;
+  }
+  main { max-width: 1040px; margin: 0 auto; }
+  header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; }
+  h1 { font-size: 24px; margin: 0; font-weight: 650; letter-spacing: -0.01em; }
+  h2 { font-size: 15px; margin: 0 0 2px; font-weight: 600; }
+  .sub { color: var(--text-secondary); margin: 2px 0 0; max-width: 62ch; }
+  .controls { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface-1); }
+  .controls button { font: inherit; border: 0; background: transparent; color: var(--text-secondary); padding: 6px 14px; cursor: pointer; }
+  .controls button[aria-pressed="true"] { background: var(--series-1); color: #fff; }
+  .controls button:focus-visible { outline: 2px solid var(--series-1); outline-offset: -2px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 20px 0; }
+  .tile, .card { background: var(--surface-1); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .tile .label { color: var(--text-secondary); font-size: 13px; }
+  .tile .value { font-size: 26px; font-weight: 620; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+  .tile .note { color: var(--text-muted); font-size: 12.5px; }
+  .card { padding: 16px; }
+  .meta { color: var(--text-muted); font-size: 13px; margin: 0 0 8px; min-height: 20px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--text-secondary); font-size: 13px; margin: 0 0 8px; padding: 0; list-style: none; }
+  .legend li { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 18px; height: 10px; border-radius: 2px; display: inline-block; }
+  .swatch.line { height: 3px; }
+  .chart { position: relative; }
+  svg { display: block; width: 100%; height: auto; touch-action: pan-y; }
+  .axis { fill: var(--text-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .tooltip {
+    position: absolute; pointer-events: none; display: none; min-width: 190px;
+    background: var(--surface-1); border: 1px solid var(--line); border-radius: 8px;
+    padding: 8px 10px; font-size: 13px; box-shadow: 0 4px 16px rgba(0, 0, 0, .14);
+    font-variant-numeric: tabular-nums;
+  }
+  .tooltip b { display: block; margin-bottom: 3px; font-weight: 600; }
+  .tooltip div { display: flex; justify-content: space-between; gap: 14px; color: var(--text-secondary); }
+  .tooltip span:last-child { color: var(--text-primary); }
+  .error { color: var(--critical); margin: 8px 0 0; }
+  details { margin-top: 14px; }
+  summary { cursor: pointer; color: var(--text-secondary); font-size: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; margin-top: 8px; }
+  th, td { text-align: right; padding: 4px 8px; border-bottom: 1px solid var(--line); }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--text-secondary); font-weight: 550; }
+  footer { margin-top: 18px; color: var(--text-muted); font-size: 13px; }
+  footer a { color: inherit; }
+</style>
+</head>
+<body class="viz-root">
+<main>
+  <header>
+    <div>
+      <h1>GridCast DE</h1>
+      <p class="sub">Day-ahead forecast of German electricity grid load with calibrated uncertainty, next to the official TSO forecast.</p>
+    </div>
+    <div class="controls" role="group" aria-label="Data source">
+      <button id="btn-live" aria-pressed="true">Live data</button>
+      <button id="btn-demo" aria-pressed="false">Bundled snapshot</button>
+    </div>
+  </header>
+
+  <section class="tiles" aria-label="Walk-forward backtest">
+    <div class="tile"><div class="label">GridCast backtest MAE</div><div class="value" id="t-mae">–</div><div class="note" id="t-period"></div></div>
+    <div class="tile"><div class="label">TSO forecast MAE, same hours</div><div class="value" id="t-tso">–</div><div class="note">SMARD day-ahead forecast</div></div>
+    <div class="tile"><div class="label">Error reduction vs TSO</div><div class="value" id="t-skill">–</div><div class="note">Mean absolute error</div></div>
+    <div class="tile"><div class="label">90% interval coverage</div><div class="value" id="t-cov">–</div><div class="note">After online conformal calibration</div></div>
+  </section>
+
+  <section class="card">
+    <h2 id="chart-title">Forecast</h2>
+    <p class="meta" id="meta">Loading…</p>
+    <ul class="legend">
+      <li><span class="swatch line" style="background:var(--series-1)"></span>GridCast median</li>
+      <li><span class="swatch" style="background:var(--series-1);opacity:.42"></span>50% interval</li>
+      <li><span class="swatch" style="background:var(--series-1);opacity:.18"></span>90% interval</li>
+      <li><span class="swatch line" style="background:var(--series-2)"></span>TSO forecast</li>
+      <li><span class="swatch line" style="background:var(--actual)"></span>Actual load</li>
+    </ul>
+    <div class="chart" id="chart">
+      <svg id="svg" viewBox="0 0 960 380" role="img" aria-labelledby="chart-title"></svg>
+      <div class="tooltip" id="tip" role="status"></div>
+    </div>
+    <p class="error" id="error" hidden></p>
+    <details>
+      <summary>Show as a table</summary>
+      <table id="table"></table>
+    </details>
+  </section>
+  <footer>
+    Data: <a href="https://www.smard.de">SMARD / Bundesnetzagentur</a> (CC BY 4.0), <a href="https://open-meteo.com">Open-Meteo</a> (CC BY 4.0). <a href="/docs">API docs</a>
+  </footer>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const fmt = new Intl.NumberFormat("en-GB", { maximumFractionDigits: 1, minimumFractionDigits: 1 });
+const gw = (mw) => mw == null ? "–" : `${fmt.format(mw / 1000)} GW`;
+const TZ = "Europe/Berlin";
+const hourOf = (d) => new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: TZ }).format(d);
+const dayOf = (d) => new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: TZ }).format(d);
+const NS = "http://www.w3.org/2000/svg";
+const box = { left: 52, right: 14, top: 12, bottom: 30, width: 960, height: 380 };
+
+function el(name, attrs, parent) {
+  const node = document.createElementNS(NS, name);
+  for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value);
+  parent.appendChild(node);
+  return node;
+}
+
+function render(data) {
+  const svg = $("svg");
+  svg.replaceChildren();
+  const pts = data.points.map((p) => ({ ...p, t: new Date(p.time) }));
+  const values = pts.flatMap((p) => [p.intervals["0.90"].lower_mw, p.intervals["0.90"].upper_mw, p.tso_forecast_mw, p.actual_mw]).filter((v) => v != null);
+  const lo = Math.floor(Math.min(...values) / 5000) * 5000;
+  const hi = Math.ceil(Math.max(...values) / 5000) * 5000;
+  const x = (i) => box.left + i * (box.width - box.left - box.right) / (pts.length - 1);
+  const y = (v) => box.top + (hi - v) * (box.height - box.top - box.bottom) / (hi - lo);
+
+  for (let v = lo; v <= hi; v += 5000) {
+    el("line", { x1: box.left, x2: box.width - box.right, y1: y(v), y2: y(v), stroke: "var(--line)", "stroke-width": 1 }, svg);
+    el("text", { x: box.left - 8, y: y(v) + 4, "text-anchor": "end", class: "axis" }, svg).textContent = `${v / 1000}`;
+  }
+  el("text", { x: 2, y: box.top + 4, class: "axis" }, svg).textContent = "GW";
+  pts.forEach((p, i) => {
+    if (i % 3 === 0) el("text", { x: x(i), y: box.height - 8, "text-anchor": "middle", class: "axis" }, svg).textContent = hourOf(p.t);
+  });
+
+  const band = (level, opacity) => {
+    const up = pts.map((p, i) => `${x(i)},${y(p.intervals[level].upper_mw)}`);
+    const down = pts.map((p, i) => `${x(i)},${y(p.intervals[level].lower_mw)}`).reverse();
+    el("polygon", { points: [...up, ...down].join(" "), fill: "var(--series-1)", opacity }, svg);
+  };
+  band("0.90", 0.18);
+  band("0.50", 0.26);
+
+  const line = (accessor, stroke, width) => {
+    let d = "", pen = false;
+    pts.forEach((p, i) => {
+      const value = accessor(p);
+      if (value == null) { pen = false; return; }
+      d += `${pen ? "L" : "M"}${x(i)} ${y(value)}`;
+      pen = true;
+    });
+    if (d) el("path", { d, fill: "none", stroke, "stroke-width": width, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
+  };
+  line((p) => p.tso_forecast_mw, "var(--series-2)", 2);
+  line((p) => p.actual_mw, "var(--actual)", 2);
+  line((p) => p.median_mw, "var(--series-1)", 2.5);
+
+  const cross = el("line", { y1: box.top, y2: box.height - box.bottom, stroke: "var(--text-muted)", "stroke-width": 1, visibility: "hidden" }, svg);
+  const dot = el("circle", { r: 5, fill: "var(--series-1)", stroke: "var(--surface-1)", "stroke-width": 2, visibility: "hidden" }, svg);
+  const hit = el("rect", { x: box.left, y: box.top, width: box.width - box.left - box.right, height: box.height - box.top - box.bottom, fill: "transparent" }, svg);
+  const tip = $("tip");
+  const hide = () => { tip.style.display = "none"; cross.setAttribute("visibility", "hidden"); dot.setAttribute("visibility", "hidden"); };
+  const show = (event) => {
+    const rect = svg.getBoundingClientRect();
+    const scale = box.width / rect.width;
+    const px = (event.clientX - rect.left) * scale;
+    const i = Math.max(0, Math.min(pts.length - 1, Math.round((px - box.left) / ((box.width - box.left - box.right) / (pts.length - 1)))));
+    const p = pts[i];
+    cross.setAttribute("x1", x(i)); cross.setAttribute("x2", x(i)); cross.setAttribute("visibility", "visible");
+    dot.setAttribute("cx", x(i)); dot.setAttribute("cy", y(p.median_mw)); dot.setAttribute("visibility", "visible");
+    const iv = p.intervals["0.90"];
+    tip.innerHTML = `<b>${hourOf(p.t)}</b>`
+      + `<div><span>Median</span><span>${gw(p.median_mw)}</span></div>`
+      + `<div><span>90% interval</span><span>${fmt.format(iv.lower_mw / 1000)}–${fmt.format(iv.upper_mw / 1000)}</span></div>`
+      + `<div><span>TSO forecast</span><span>${gw(p.tso_forecast_mw)}</span></div>`
+      + `<div><span>Actual</span><span>${gw(p.actual_mw)}</span></div>`;
+    tip.style.display = "block";
+    const left = x(i) / scale;
+    tip.style.left = `${left > rect.width - 220 ? left - 210 : left + 12}px`;
+    tip.style.top = `${16}px`;
+  };
+  hit.addEventListener("pointermove", show);
+  hit.addEventListener("pointerdown", show);
+  hit.addEventListener("pointerleave", hide);
+
+  $("chart-title").textContent = `Load forecast for ${dayOf(pts[0].t)}`;
+  const issued = new Date(data.issue_time);
+  $("meta").textContent = `Source: ${data.source}. Last observed load: ${dayOf(issued)}, ${hourOf(issued)} local time. Model: ${data.selected_model}.`
+    + (data.warnings.length ? ` Warnings: ${data.warnings.join("; ")}` : "");
+
+  const rows = pts.map((p) => `<tr><td>${hourOf(p.t)}</td><td>${gw(p.median_mw)}</td><td>${fmt.format(p.intervals["0.90"].lower_mw / 1000)}–${fmt.format(p.intervals["0.90"].upper_mw / 1000)}</td><td>${gw(p.tso_forecast_mw)}</td><td>${gw(p.actual_mw)}</td></tr>`);
+  $("table").innerHTML = `<thead><tr><th>Local time</th><th>Median</th><th>90% interval (GW)</th><th>TSO</th><th>Actual</th></tr></thead><tbody>${rows.join("")}</tbody>`;
+}
+
+async function load(mode) {
+  $("btn-live").setAttribute("aria-pressed", mode === "live");
+  $("btn-demo").setAttribute("aria-pressed", mode === "demo");
+  $("error").hidden = true;
+  $("meta").textContent = "Loading…";
+  try {
+    const response = await fetch(`/v1/forecast/${mode}`);
+    if (!response.ok) throw new Error((await response.json()).detail || response.statusText);
+    render(await response.json());
+  } catch (error) {
+    $("error").textContent = `${mode === "live" ? "Live data is unavailable" : "Forecast failed"}: ${error.message}`;
+    $("error").hidden = false;
+    $("meta").textContent = "";
+    if (mode === "live") load("demo");
+  }
+}
+
+async function loadModel() {
+  const response = await fetch("/v1/model");
+  if (!response.ok) return;
+  const b = (await response.json()).backtest;
+  $("t-mae").textContent = `${Math.round(b.mae_mw).toLocaleString("en-GB")} MW`;
+  $("t-tso").textContent = `${Math.round(b.tso_mae_mw).toLocaleString("en-GB")} MW`;
+  $("t-skill").textContent = `${((1 - b.mae_mw / b.tso_mae_mw) * 100).toFixed(1)}%`;
+  $("t-cov").textContent = `${(b.coverage_cal_90 * 100).toFixed(1)}%`;
+  const localDate = (value) => new Intl.DateTimeFormat("en-CA", { timeZone: TZ }).format(new Date(value));
+  $("t-period").textContent = `${localDate(b.test_period[0])} to ${localDate(b.test_period[1])}`;
+}
+
+$("btn-live").addEventListener("click", () => load("live"));
+$("btn-demo").addEventListener("click", () => load("demo"));
+loadModel();
+load("live");
+</script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+# Every experiment parameter lives here; run manifests record the file hash.
+seed: 42
+ridge_alpha: 10.0
+
+task:
+  history_hours: 672      # 4 weeks of context available to every model
+  gap_hours: 18           # last observed hour -> first target hour
+  horizon_hours: 24
+  # Last observed load is 06:00 Europe/Berlin on D-1; the target is day D from 00:00 local.
+  # This leaves a ~3 h publication margin before the TSO's own 10:00 deadline.
+  quantiles: [0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95]
+
+data:
+  raw_dir: data/raw
+  processed_path: data/processed/hourly.parquet
+  start: "2015-01-01"
+  load_min_mw: 25000
+  load_max_mw: 95000
+
+backtest:
+  tune_train_end: "2023-01-01"
+  tune_val_end: "2024-01-01"
+  # Half-yearly expanding folds. Test starts only once archived NWP is complete.
+  fold_starts: ["2024-07-01", "2025-01-01", "2025-07-01", "2026-01-01", "2026-07-01"]
+  end: "2026-10-29"  # exclusive; ERA5 and archived NWP are complete up to here
+  val_days: 182
+
+conformal:
+  levels: [0.5, 0.8, 0.9]
+  window_days: 90
+  gamma: 0.02
+
+gbm:
+  origin_stride_hours: 12
+  params:
+    learning_rate: 0.05
+    num_leaves: 63
+    min_data_in_leaf: 100
+    feature_fraction: 0.8
+    bagging_fraction: 0.8
+    bagging_freq: 1
+    lambda_l2: 1.0
+  num_boost_round: 3000
+  early_stopping_rounds: 50
+
+nn:
+  origin_stride_hours: 2
+  context_hours: 336
+  patch_hours: 12
+  d_model: 64
+  n_heads: 4
+  n_layers: 2
+  dropout: 0.1
+  lr: 0.001
+  weight_decay: 0.0001
+  batch_size: 256
+  max_epochs: 20
+  patience: 5
+  device: cpu

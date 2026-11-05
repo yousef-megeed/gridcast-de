@@ -1,0 +1,149 @@
+{
+  "selected_model": "attention_net",
+  "eda": {
+    "mean_gw_2018": 58.13045356621004,
+    "mean_gw_2025": 53.17534980707762,
+    "temp_load_corr_workdays_2023on": -0.4188068588582233
+  },
+  "calibration": {
+    "quantile_reliability": {
+      "0.05": 0.1309313725490196,
+      "0.10": 0.1931372549019608,
+      "0.25": 0.32269607843137255,
+      "0.50": 0.49892156862745096,
+      "0.75": 0.6809313725490196,
+      "0.90": 0.8086274509803921,
+      "0.95": 0.8730882352941176
+    }
+  },
+  "segments": [
+    {
+      "segment": "Bridge day",
+      "hours": 192,
+      "model_mae": 1556.426660131476,
+      "tso_mae": 3101.651354166667,
+      "model_bias": 487.3510653210413
+    },
+    {
+      "segment": "Christmas period",
+      "hours": 528,
+      "model_mae": 2356.237146591855,
+      "tso_mae": 2749.4138636363637,
+      "model_bias": 1469.113393591118
+    },
+    {
+      "segment": "National holiday",
+      "hours": 552,
+      "model_mae": 2116.98092291716,
+      "tso_mae": 2161.6415036231883,
+      "model_bias": -665.8571823633921
+    },
+    {
+      "segment": "Normal working day",
+      "hours": 13370,
+      "model_mae": 1307.2513224939235,
+      "tso_mae": 1870.0376955871354,
+      "model_bias": 187.15687134167734
+    },
+    {
+      "segment": "Regional holiday",
+      "hours": 408,
+      "model_mae": 1381.903623587001,
+      "tso_mae": 2352.2078186274507,
+      "model_bias": 225.80247265850156
+    },
+    {
+      "segment": "Weekend",
+      "hours": 5350,
+      "model_mae": 1219.8257175043927,
+      "tso_mae": 2100.340134579439,
+      "model_bias": -411.06911790489534
+    },
+    {
+      "segment": "Temp. forecast error < 0.3 \u00b0C",
+      "hours": 6800,
+      "model_mae": 1303.4574352328095,
+      "tso_mae": 2015.1181955882353,
+      "model_bias": 145.0421412428559
+    },
+    {
+      "segment": "Temp. forecast error \u2265 0.7 \u00b0C",
+      "hours": 6801,
+      "model_mae": 1375.362607314533,
+      "tso_mae": 1955.2277003381855,
+      "model_bias": -95.24088832937053
+    }
+  ],
+  "worst_days": [
+    {
+      "day": "2026-10-03",
+      "model_mae": 6032.0,
+      "tso_mae": 4628.0,
+      "bias": -6032.0,
+      "weekday": "Saturday"
+    },
+    {
+      "day": "2025-12-30",
+      "model_mae": 5393.0,
+      "tso_mae": 3982.0,
+      "bias": 5393.0,
+      "weekday": "Tuesday"
+    },
+    {
+      "day": "2025-12-29",
+      "model_mae": 5331.0,
+      "tso_mae": 4525.0,
+      "bias": 5331.0,
+      "weekday": "Monday"
+    },
+    {
+      "day": "2025-12-31",
+      "model_mae": 4861.0,
+      "tso_mae": 2954.0,
+      "bias": 4854.0,
+      "weekday": "Wednesday"
+    },
+    {
+      "day": "2025-12-22",
+      "model_mae": 4613.0,
+      "tso_mae": 3766.0,
+      "bias": 4613.0,
+      "weekday": "Monday"
+    },
+    {
+      "day": "2024-11-16",
+      "model_mae": 4143.0,
+      "tso_mae": 5158.0,
+      "bias": -4143.0,
+      "weekday": "Saturday"
+    },
+    {
+      "day": "2024-12-24",
+      "model_mae": 4139.0,
+      "tso_mae": 4570.0,
+      "bias": 4139.0,
+      "weekday": "Tuesday"
+    },
+    {
+      "day": "2026-10-09",
+      "model_mae": 3922.0,
+      "tso_mae": 734.0,
+      "bias": 3922.0,
+      "weekday": "Friday"
+    },
+    {
+      "day": "2024-12-31",
+      "model_mae": 3890.0,
+      "tso_mae": 1671.0,
+      "bias": 3890.0,
+      "weekday": "Tuesday"
+    },
+    {
+      "day": "2026-03-25",
+      "model_mae": 3606.0,
+      "tso_mae": 5086.0,
+      "bias": -3606.0,
+      "weekday": "Wednesday"
+    }
+  ]
+}

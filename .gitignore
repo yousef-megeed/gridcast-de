@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+dist/
+*.egg-info/
+
+# Secrets / local config
+.env
+.env.*
+!.env.example
+
+# Data and experiment outputs (reproducible through `make data` and `make backtest`)
+data/raw/
+data/processed/
+mlruns/
+mlartifacts/
+mlflow.db
+results/predictions/
+artifacts/explain/
+logs/
+*.log
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Personal documents: contains contact details, never publish
+cv/
